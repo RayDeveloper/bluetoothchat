@@ -14,10 +14,14 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import org.w3c.dom.Text;
 
 import java.util.Set;
 
@@ -43,15 +47,43 @@ public class DeviceListActivity extends AppCompatActivity {
         adapterPairedDevices = new ArrayAdapter<String>(this,R.layout.device_list_item);
         adapterAvailableDevices = new ArrayAdapter<String>(this, R.layout.device_list_item);
 
-        listPairedDevices.setAdapter(adapterPairedDevices);
+
         listAvailableDevices.setAdapter(adapterAvailableDevices);
+        listAvailableDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Context context = DeviceListActivity.this;
+                String info = ((TextView) view).getText().toString();
+                String address= info.substring(info.length() - 17);
+                Intent intent = new Intent();
+                intent.putExtra("deviceAddress",address);
+                setResult(RESULT_OK,intent);
+                //Toast.makeText(context,"Address: " + address, Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        });
         bluetoothAdapter = bluetoothAdapter.getDefaultAdapter();
         @SuppressLint("MissingPermission") Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
 
         if(pairedDevices != null && pairedDevices.size() >0){
             for(BluetoothDevice device : pairedDevices) {
                 adapterPairedDevices.add(device.getName()+"\n"+ device.getAddress());
+
             }
+            listPairedDevices.setAdapter(adapterPairedDevices);
+            listPairedDevices.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Context context = DeviceListActivity.this;
+                    String info = ((TextView) view).getText().toString();
+                    String address= info.substring(info.length() - 17);
+                    //Intent intent = new Intent();
+                    //intent.putExtra("deviceAddress",address);
+                    //setResult(RESULT_OK,intent);
+                    Toast.makeText(context,"Address: " + address, Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+            });
         }
 
         IntentFilter intentFilter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
@@ -70,6 +102,8 @@ public class DeviceListActivity extends AppCompatActivity {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if(device.getBondState() != BluetoothDevice.BOND_BONDED ){
                     adapterAvailableDevices.add(device.getName() + "\n" +device.getAddress());
+                    //Toast.makeText(context, "Address"+ device.getAddress(), Toast.LENGTH_SHORT).show();
+
                 }
 
             }else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)){
