@@ -21,7 +21,14 @@ import android.os.Handler;
 import android.os.Message;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Toast;
+
+import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter bluetoothAdapter;
@@ -29,6 +36,11 @@ public class MainActivity extends AppCompatActivity {
     private ChatUtils chatUtils;
     private final int LOCATION_PERMISSION_REQUEST = 101;
     private final int SELECT_DEVICE = 102;
+
+    private ListView listMainChat;
+    private EditText edCreateMessage;
+    private Button btnSendMessage;
+    private ArrayAdapter<String> adapterMainChat;
 
     public static final int MESSAGE_STATE_CHANGED = 0;
     public static final int MESSAGE_READ = 1;
@@ -63,9 +75,15 @@ public class MainActivity extends AppCompatActivity {
                     break;
 
                 case MESSAGE_READ:
+                    byte[] buffer = (byte[]) message.obj;
+                    String inputBuffer = new String(buffer,0,message.arg1);
+                    adapterMainChat.add(connectedDevice+ ": " + inputBuffer);
                     break;
 
                 case MESSAGE_WRITE:
+                    byte[] buffer1 = (byte[])message.obj;
+                    String outputBuffer = new String(buffer1);
+                    adapterMainChat.add("Me: "+ outputBuffer);
                     break;
 
                 case MESSAGE_DEVICE_NAME:
@@ -93,7 +111,33 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         chatUtils = new ChatUtils(this,handler);
+        init();
         initBluetooth();
+    }
+
+    private void init(){
+
+        listMainChat = findViewById(R.id.list_conversation);
+        edCreateMessage = findViewById(R.id.ed_enter_message);
+        btnSendMessage = findViewById(R.id.btn_send_msg);
+
+        adapterMainChat= new ArrayAdapter<String>(this,R.layout.activity_main);//? hmmm
+        listMainChat.setAdapter(adapterMainChat);
+
+        btnSendMessage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                String message = edCreateMessage.getText().toString();
+                if(message.isEmpty()){
+                    edCreateMessage.setText("");
+                    chatUtils.write(message.getBytes());
+
+
+                }
+
+            }
+        });
     }
 
     private void initBluetooth() {//check if device has bluetooth capabilities
@@ -153,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode,  String[] permissions, int[] grantResults) {
 
         if (requestCode == LOCATION_PERMISSION_REQUEST) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
